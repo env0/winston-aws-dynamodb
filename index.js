@@ -1,10 +1,11 @@
-"use strict";
+'use strict';
 
 var util = require('util'),
     winston = require('winston'),
     AWS = require('aws-sdk'),
     dynamodbIntegration = require('./lib/dynamodb-integration'),
     isEmpty = require('lodash.isempty'),
+    assign = require('lodash.assign'),
     isError = require('lodash.iserror'),
     stringify = require('./lib/utils').stringify,
     debug = require('./lib/utils').debug,
@@ -12,15 +13,13 @@ var util = require('util'),
 
 const ALLOWED_REGIONS = ['us-east-1', 'us-west-1', 'us-west-2', 'eu-west-1', 'eu-central-1', 'ap-northeast-1', 'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2', 'sa-east-1'];
 
-var WinstonDynamoDB = (function (options) {
+var WinstonDynamoDB = function (options) {
     winston.Transport.call(this, options);
     this.level = options.level || 'info';
-    this.name = 'DynamoDB';
+    this.name = options.name || 'DynamoDB';
     this.tableName = options.tableName;
     this.logStreamName = options.logStreamName;
-    this.uploadRate = options.uploadRate || 2000;
-    this.logEvents = [];
-    this.errorHandler = options.errorHandler;
+    this.options = options;
 
     var awsAccessKeyId = options.awsAccessKeyId;
     var awsSecretKey = options.awsSecretKey;
@@ -29,13 +28,35 @@ var WinstonDynamoDB = (function (options) {
         return [ log.level, log.message ].join(' - ')
     };
     this.formatMessage = options.jsonMessage ? stringify : messageFormatter;
+    this.proxyServer = options.proxyServer;
+    this.uploadRate = options.uploadRate || 2000;
+    this.logEvents = [];
+    this.errorHandler = options.errorHandler;
 
     if (options.dynamoDB) {
         this.dynamoDB = options.dynamoDB;
     } else {
+        if (this.proxyServer) {
+            AWS.config.update({
+                httpOptions: {
+                    agent: require('proxy-agent')(this.proxyServer)
+                }
+            });
+        }
+
         var config = {};
+
         if (awsAccessKeyId && awsSecretKey && awsRegion) {
             config = {credentials: {accessKeyId: awsAccessKeyId, secretAccessKey: awsSecretKey}, region: awsRegion};
+        } else if (awsRegion && !awsAccessKeyId && !awsSecretKey) {
+            // Amazon SDK will automatically pull access credentials
+            // from IAM Role when running on EC2 but region still
+            // needs to be configured
+            config = { region: awsRegion };
+        }
+
+        if (options.awsOptions) {
+            config = assign(config, options.awsOptions);
         }
 
         this.dynamoDB = new AWS.DynamoDB(config);
@@ -46,7 +67,7 @@ var WinstonDynamoDB = (function (options) {
     }
 
     debug('constructor finished');
-});
+};
 
 util.inherits(WinstonDynamoDB, winston.Transport);
 
