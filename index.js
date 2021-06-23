@@ -9,7 +9,6 @@ const util = require('util'),
       isError = require('lodash.iserror'),
       stringify = require('./lib/utils').stringify,
       debug = require('./lib/utils').debug,
-      process = require('process'),
       defaultFlushTimeoutMs = 10000;
 
 const ALLOWED_REGIONS = ['us-east-1', 'us-west-1', 'us-west-2', 'eu-west-1', 'eu-central-1', 'ap-northeast-1', 'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2', 'sa-east-1'];
@@ -95,6 +94,7 @@ WinstonDynamoDB.prototype.log = function (info, callback) {
 
 WinstonDynamoDB.prototype.add = function(log) {
     debug('add log to queue', log);
+    debug('time', process.hrtime.bigint());
 
     if (!isEmpty(log.message) || isError(log.message)) {
         this.logEvents.push({
