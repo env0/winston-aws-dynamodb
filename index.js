@@ -95,25 +95,23 @@ WinstonDynamoDB.prototype.log = function (info, callback) {
 WinstonDynamoDB.prototype.add = function(log) {
     debug('add log to queue', log);
 
-    var self = this;
-
     if (!isEmpty(log.message) || isError(log.message)) {
-        self.logEvents.push({
-            message: self.formatMessage(log),
+        this.logEvents.push({
+            message: this.formatMessage(log),
             timestamp: new Date().getTime()
         });
     }
 
-    if (!self.intervalId) {
+    if (!this.intervalId) {
         debug('creating interval');
-        self.intervalId = setInterval(function() {
-            self.submit(function(err) {
+        this.intervalId = setInterval(() => {
+            this.submit((err) => {
                 if (err) {
                     debug('error during submit', err, true);
-                    self.errorHandler ? self.errorHandler(err) : console.error(err);
+                    this.errorHandler ? this.errorHandler(err) : console.error(err);
                 }
             });
-        }, self.uploadRate);
+        }, this.uploadRate);
     }
 };
 
