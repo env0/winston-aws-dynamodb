@@ -148,6 +148,6 @@ WinstonDynamoDB.prototype.kthxbye = function(callback) {
     }).bind(this));
 };
 
-winston.transports.CloudWatch = WinstonDynamoDB;
+winston.transports.DynamoDB = WinstonDynamoDB;
 
 module.exports = WinstonDynamoDB;
