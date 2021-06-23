@@ -94,7 +94,6 @@ WinstonDynamoDB.prototype.log = function (info, callback) {
 
 WinstonDynamoDB.prototype.add = function(log) {
     debug('add log to queue', log);
-    debug('time', process.hrtime.bigint());
 
     if (!isEmpty(log.message) || isError(log.message)) {
         this.logEvents.push({
