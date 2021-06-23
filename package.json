@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "Winston Transport for DynamoDB",
   "main": "index.js",
-  "scripts": {
-    "test": "jest"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/env0/winston-aws-dynamodb.git"
@@ -18,9 +15,6 @@
   "homepage": "https://github.com/env0/winston-aws-dynamodb#readme",
   "peerDependencies": {
     "winston": "^3.0.0"
-  },
-  "devDependencies": {
-    "jest": "^27.0.4"
   },
   "dependencies": {
     "chalk": "^4.1.1",
