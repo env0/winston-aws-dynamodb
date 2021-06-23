@@ -1,15 +1,15 @@
 'use strict';
 
-var util = require('util'),
-    winston = require('winston'),
-    AWS = require('aws-sdk'),
-    dynamodbIntegration = require('./lib/dynamodb-integration'),
-    isEmpty = require('lodash.isempty'),
-    assign = require('lodash.assign'),
-    isError = require('lodash.iserror'),
-    stringify = require('./lib/utils').stringify,
-    debug = require('./lib/utils').debug,
-    defaultFlushTimeoutMs = 10000;
+const util = require('util'),
+      winston = require('winston'),
+      AWS = require('aws-sdk'),
+      dynamodbIntegration = require('./lib/dynamodb-integration'),
+      isEmpty = require('lodash.isempty'),
+      assign = require('lodash.assign'),
+      isError = require('lodash.iserror'),
+      stringify = require('./lib/utils').stringify,
+      debug = require('./lib/utils').debug,
+      defaultFlushTimeoutMs = 10000;
 
 const ALLOWED_REGIONS = ['us-east-1', 'us-west-1', 'us-west-2', 'eu-west-1', 'eu-central-1', 'ap-northeast-1', 'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2', 'sa-east-1'];
 
@@ -21,10 +21,10 @@ var WinstonDynamoDB = function (options) {
     this.logStreamName = options.logStreamName;
     this.options = options;
 
-    var awsAccessKeyId = options.awsAccessKeyId;
-    var awsSecretKey = options.awsSecretKey;
-    var awsRegion = options.awsRegion;
-    var messageFormatter = options.messageFormatter ? options.messageFormatter : function(log) {
+    const awsAccessKeyId = options.awsAccessKeyId;
+    const awsSecretKey = options.awsSecretKey;
+    const awsRegion = options.awsRegion;
+    const messageFormatter = options.messageFormatter ? options.messageFormatter : function(log) {
         return [ log.level, log.message ].join(' - ')
     };
     this.formatMessage = options.jsonMessage ? stringify : messageFormatter;
@@ -118,7 +118,7 @@ WinstonDynamoDB.prototype.add = function(log) {
 };
 
 WinstonDynamoDB.prototype.submit = function(callback) {
-    var streamName = typeof this.logStreamName === 'function' ?
+    const streamName = typeof this.logStreamName === 'function' ?
         this.logStreamName() : this.logStreamName;
 
     if (isEmpty(this.logEvents)) {
