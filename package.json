@@ -1,6 +1,6 @@
 {
   "name": "winston-aws-dynamodb",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Winston Transport for DynamoDB",
   "main": "index.js",
   "repository": {
@@ -11,6 +11,9 @@
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/env0/winston-aws-dynamodb/issues"
+  },
+  "scripts": {
+    "publish": "yarn publish"
   },
   "homepage": "https://github.com/env0/winston-aws-dynamodb#readme",
   "peerDependencies": {
