@@ -142,7 +142,7 @@ WinstonDynamoDB.prototype.submit = function(callback) {
         streamName,
         this.logEvents,
         this.options,
-        callback ?? defaultCallback
+        callback || defaultCallback
     );
 };
 
