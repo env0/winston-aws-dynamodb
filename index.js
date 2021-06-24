@@ -129,6 +129,8 @@ WinstonDynamoDB.prototype.submit = function(callback) {
         }
     }
 
+    callback = callback || defaultCallback;
+
     const streamName = typeof this.logStreamName === 'function' ?
         this.logStreamName() : this.logStreamName;
 
@@ -142,7 +144,7 @@ WinstonDynamoDB.prototype.submit = function(callback) {
         streamName,
         this.logEvents,
         this.options,
-        callback || defaultCallback
+        callback
     );
 };
 
