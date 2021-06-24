@@ -93,7 +93,6 @@ WinstonDynamoDB.prototype.log = function (info, callback) {
 };
 
 WinstonDynamoDB.prototype.createUploadInterval = function() {
-    debug('creating interval');
     this.intervalId = setInterval(() => {
         this.submit();
     }, this.uploadRate);
@@ -111,12 +110,14 @@ WinstonDynamoDB.prototype.add = function(log) {
 
     // When we reach maximum amount of items in batch, reschedule
     if (this.logEvents.length >= dynamodbIntegration.MAX_BATCH_ITEM_NUM) {
+        debug('Max items for batch reached - submitting and rescheduling interval');
         clearInterval(this.intervalId);
         this.createUploadInterval();
         this.submit();
     }
 
     if (!this.intervalId) {
+        debug('creating interval');
         this.createUploadInterval()
     }
 };
@@ -128,7 +129,6 @@ WinstonDynamoDB.prototype.submit = function(callback) {
             this.errorHandler ? this.errorHandler(err) : console.error(err);
         }
     }
-
     callback = callback || defaultCallback;
 
     const streamName = typeof this.logStreamName === 'function' ?
