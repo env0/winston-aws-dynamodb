@@ -104,7 +104,8 @@ WinstonDynamoDB.prototype.add = function(log) {
     if (!isEmpty(log.message) || isError(log.message)) {
         this.logEvents.push({
             message: this.formatMessage(log),
-            timestamp: process.hrtime.bigint()
+            timestamp: process.hrtime.bigint(),
+            rawMessage: log
         });
     }
 
