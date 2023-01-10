@@ -24,6 +24,6 @@
     "lodash.isempty": "^4.4.0",
     "lodash.iserror": "^3.1.1",
     "lodash.isundefined": "^3.0.1",
-    "proxy-agent": "^4.0.1"
+    "proxy-agent": "^5.0.0"
   }
 }
