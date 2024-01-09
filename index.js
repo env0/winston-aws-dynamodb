@@ -1,15 +1,17 @@
 'use strict';
 
-const util = require('util'),
-      winston = require('winston'),
-      AWS = require('aws-sdk'),
-      dynamodbIntegration = require('./lib/dynamodb-integration'),
-      isEmpty = require('lodash.isempty'),
-      assign = require('lodash.assign'),
-      isError = require('lodash.iserror'),
-      stringify = require('./lib/utils').stringify,
-      debug = require('./lib/utils').debug,
-      defaultFlushTimeoutMs = 10000;
+const
+    util = require('util'),
+    winston = require('winston'),
+    { DynamoDBClient } = require('@aws-sdk/client-dynamodb'),
+    { NodeHttpHandler } = require('@smithy/node-http-handler'),
+    dynamodbIntegration = require('./lib/dynamodb-integration'),
+    isEmpty = require('lodash.isempty'),
+    assign = require('lodash.assign'),
+    isError = require('lodash.iserror'),
+    stringify = require('./lib/utils').stringify,
+    debug = require('./lib/utils').debug,
+    defaultFlushTimeoutMs = 10000;
 
 const ALLOWED_REGIONS = ['us-east-1', 'us-west-1', 'us-west-2', 'eu-west-1', 'eu-central-1', 'ap-northeast-1', 'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2', 'sa-east-1'];
 
@@ -33,36 +35,33 @@ var WinstonDynamoDB = function (options) {
     this.logEvents = [];
     this.errorHandler = options.errorHandler;
 
-    if (options.dynamoDB) {
-        this.dynamoDB = options.dynamoDB;
-    } else {
-        if (this.proxyServer) {
-            AWS.config.update({
-                httpOptions: {
-                    agent: require('proxy-agent')(this.proxyServer)
-                }
-            });
-        }
+    let config = {};
 
-        var config = {};
-
-        if (awsAccessKeyId && awsSecretKey && awsRegion) {
-            config = {credentials: {accessKeyId: awsAccessKeyId, secretAccessKey: awsSecretKey}, region: awsRegion};
-        } else if (awsRegion && !awsAccessKeyId && !awsSecretKey) {
-            // Amazon SDK will automatically pull access credentials
-            // from IAM Role when running on EC2 but region still
-            // needs to be configured
-            config = { region: awsRegion };
-        }
-
-        if (options.awsOptions) {
-            config = assign(config, options.awsOptions);
-        }
-
-        this.dynamoDB = new AWS.DynamoDB(config);
+    if (this.proxyServer) {
+        const agent = require('proxy-agent')(this.proxyServer);
+        config.requestHandler = new NodeHttpHandler({
+            httpAgent: agent,
+            httpsAgent: agent
+        })
     }
 
-    if (ALLOWED_REGIONS.indexOf(this.dynamoDB.config.region) < 0) {
+    if (awsAccessKeyId && awsSecretKey && awsRegion) {
+        config.credentials = {accessKeyId: awsAccessKeyId, secretAccessKey: awsSecretKey};
+        config.region = awsRegion;
+    } else if (awsRegion && !awsAccessKeyId && !awsSecretKey) {
+        // Amazon SDK will automatically pull access credentials
+        // from IAM Role when running on EC2 but region still
+        // needs to be configured
+        config.region = awsRegion
+    }
+
+    if (options.awsOptions) {
+        config = assign(config, options.awsOptions);
+    }
+
+    this.dynamoDB = new DynamoDBClient(config);
+
+    if (ALLOWED_REGIONS.indexOf(config.region) < 0) {
         throw new Error("unavailable region given");
     }
 
