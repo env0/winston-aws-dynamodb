@@ -72,7 +72,6 @@ util.inherits(WinstonDynamoDB, winston.Transport);
 
 WinstonDynamoDB.prototype.log = function (info, callback) {
     debug('log (called by winston)', info);
-    console.log('yossi log with info', { info });
     if (!isEmpty(info.message) || isError(info.message)) {
         this.add(info);
     }
