@@ -126,7 +126,7 @@ WinstonDynamoDB.prototype.submit = function(callback) {
     const defaultCallback = (err) => {
         if (err) {
             debug('error during submit', err, true);
-            this.errorHandler ? this.errorHandler(err) : console.error(err);
+            this.errorHandler && this.errorHandler(err);
         }
     }
     callback = callback || defaultCallback;

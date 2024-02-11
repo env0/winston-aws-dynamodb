@@ -1,6 +1,6 @@
 {
   "name": "winston-aws-dynamodb",
-  "version": "1.0.0",
+  "version": "2.0.1",
   "description": "Winston Transport for DynamoDB",
   "main": "index.js",
   "repository": {
