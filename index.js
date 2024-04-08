@@ -3,19 +3,14 @@
 const
     util = require('util'),
     winston = require('winston'),
-    { DynamoDBClient } = require('@aws-sdk/client-dynamodb'),
-    { NodeHttpHandler } = require('@smithy/node-http-handler'),
     dynamodbIntegration = require('./lib/dynamodb-integration'),
     isEmpty = require('lodash.isempty'),
-    assign = require('lodash.assign'),
     isError = require('lodash.iserror'),
     stringify = require('./lib/utils').stringify,
     debug = require('./lib/utils').debug,
     defaultFlushTimeoutMs = 10000;
 
-const ALLOWED_REGIONS = ['us-east-1', 'us-west-1', 'us-west-2', 'eu-west-1', 'eu-central-1', 'ap-northeast-1', 'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2', 'sa-east-1'];
-
-var WinstonDynamoDB = function (options) {
+const WinstonDynamoDB = function (options) {
     winston.Transport.call(this, options);
     this.level = options.level || 'info';
     this.name = options.name || 'DynamoDB';
@@ -23,11 +18,8 @@ var WinstonDynamoDB = function (options) {
     this.logStreamName = options.logStreamName;
     this.options = options;
 
-    const awsAccessKeyId = options.awsAccessKeyId;
-    const awsSecretKey = options.awsSecretKey;
-    const awsRegion = options.awsRegion;
-    const messageFormatter = options.messageFormatter ? options.messageFormatter : function(log) {
-        return [ log.level, log.message ].join(' - ')
+    const messageFormatter = options.messageFormatter ? options.messageFormatter : function (log) {
+        return [log.level, log.message].join(' - ')
     };
     this.formatMessage = options.jsonMessage ? stringify : messageFormatter;
     this.proxyServer = options.proxyServer;
@@ -35,34 +27,10 @@ var WinstonDynamoDB = function (options) {
     this.logEvents = [];
     this.errorHandler = options.errorHandler;
 
-    let config = {};
-
-    if (this.proxyServer) {
-        const agent = require('proxy-agent')(this.proxyServer);
-        config.requestHandler = new NodeHttpHandler({
-            httpAgent: agent,
-            httpsAgent: agent
-        })
-    }
-
-    if (awsAccessKeyId && awsSecretKey && awsRegion) {
-        config.credentials = {accessKeyId: awsAccessKeyId, secretAccessKey: awsSecretKey};
-        config.region = awsRegion;
-    } else if (awsRegion && !awsAccessKeyId && !awsSecretKey) {
-        // Amazon SDK will automatically pull access credentials
-        // from IAM Role when running on EC2 but region still
-        // needs to be configured
-        config.region = awsRegion
-    }
-
-    if (options.awsOptions) {
-        config = assign(config, options.awsOptions);
-    }
-
-    this.dynamoDB = new DynamoDBClient(config);
-
-    if (ALLOWED_REGIONS.indexOf(config.region) < 0) {
-        throw new Error("unavailable region given");
+    if (options.dynamoDbClient) {
+        this.dynamoDB = options.dynamoDbClient;
+    } else {
+        throw new Error("Pass configured DynamoDB client as 'dynamoDbClient' option");
     }
 
     debug('constructor finished');
@@ -91,13 +59,13 @@ WinstonDynamoDB.prototype.log = function (info, callback) {
     this.submit(callback);
 };
 
-WinstonDynamoDB.prototype.createUploadInterval = function() {
+WinstonDynamoDB.prototype.createUploadInterval = function () {
     this.intervalId = setInterval(() => {
         this.submit();
     }, this.uploadRate);
 }
 
-WinstonDynamoDB.prototype.add = function(log) {
+WinstonDynamoDB.prototype.add = function (log) {
     debug('add log to queue', log);
 
     if (!isEmpty(log.message) || isError(log.message)) {
@@ -122,7 +90,7 @@ WinstonDynamoDB.prototype.add = function(log) {
     }
 };
 
-WinstonDynamoDB.prototype.submit = function(callback) {
+WinstonDynamoDB.prototype.submit = function (callback) {
     const defaultCallback = (err) => {
         if (err) {
             debug('error during submit', err, true);
@@ -148,12 +116,12 @@ WinstonDynamoDB.prototype.submit = function(callback) {
     );
 };
 
-WinstonDynamoDB.prototype.kthxbye = function(callback) {
+WinstonDynamoDB.prototype.kthxbye = function (callback) {
     clearInterval(this.intervalId);
     this.intervalId = null;
     this.flushTimeout = this.flushTimeout || (Date.now() + defaultFlushTimeoutMs);
 
-    this.submit((function(error) {
+    this.submit((function (error) {
         if (error) return callback(error);
         if (isEmpty(this.logEvents)) return callback();
         if (Date.now() > this.flushTimeout) return callback(new Error('Timeout reached while waiting for logs to submit'));

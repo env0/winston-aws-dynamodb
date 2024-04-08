@@ -1,30 +1,27 @@
 {
   "name": "winston-aws-dynamodb",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "description": "Winston Transport for DynamoDB",
   "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/env0/winston-aws-dynamodb.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "env0",
+  "private": true,
   "bugs": {
     "url": "https://github.com/env0/winston-aws-dynamodb/issues"
   },
   "homepage": "https://github.com/env0/winston-aws-dynamodb#readme",
   "peerDependencies": {
     "winston": "^3.0.0",
-    "@aws-sdk/client-dynamodb": "^3.485.0",
-    "@smithy/node-http-handler": "^2.2.2"
+    "@aws-sdk/client-dynamodb": "^3.540.0"
   },
   "dependencies": {
     "chalk": "^4.1.1",
     "fast-safe-stringify": "^2.0.7",
-    "lodash.assign": "^4.2.0",
     "lodash.isempty": "^4.4.0",
     "lodash.iserror": "^3.1.1",
-    "lodash.isundefined": "^3.0.1",
-    "proxy-agent": "^4.0.1"
+    "lodash.isundefined": "^3.0.1"
   }
 }
