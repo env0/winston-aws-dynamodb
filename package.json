@@ -1,6 +1,6 @@
 {
   "name": "winston-aws-dynamodb",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Winston Transport for DynamoDB",
   "main": "index.js",
   "repository": {
@@ -8,7 +8,7 @@
     "url": "git+https://github.com/env0/winston-aws-dynamodb.git"
   },
   "author": "env0",
-  "private": true,
+  "license": "ISC",
   "bugs": {
     "url": "https://github.com/env0/winston-aws-dynamodb/issues"
   },
