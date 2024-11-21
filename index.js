@@ -45,8 +45,13 @@ WinstonDynamoDB.prototype.log = function (info, callback) {
     if (!isEmpty(info.message) || isError(info.message)) {
         const { message } = info
 
-        for (let i = 0; i < message.length; i += maximalMessageLength) {
-            this.log({ ...info, message: message.slice(i, i + maximalMessageLength) }, () => {});
+        if (message.length < maximalMessageLength) {
+            this.add(info);
+        }
+        else {
+            for (let i = 0; i < message.length; i += maximalMessageLength) {
+                this.log({ ...info, message: message.slice(i, i + maximalMessageLength) }, () => {});
+            }
         }
     }
 
