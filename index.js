@@ -8,8 +8,7 @@ const
     isError = require('lodash.iserror'),
     stringify = require('./lib/utils').stringify,
     debug = require('./lib/utils').debug,
-    defaultFlushTimeoutMs = 10_000,
-    maximalMessageLength = 10_000;
+    defaultFlushTimeoutMs = 10000;
 
 const WinstonDynamoDB = function (options) {
     winston.Transport.call(this, options);
@@ -43,11 +42,7 @@ WinstonDynamoDB.prototype.log = function (info, callback) {
     debug('log (called by winston)', info);
 
     if (!isEmpty(info.message) || isError(info.message)) {
-        const { message } = info
-
-        for (let i = 0; i < message.length; i += maximalMessageLength) {
-            this.add({ ...info, message: message.slice(i, i + maximalMessageLength) });
-        }
+        this.add(info);
     }
 
     if (!/^uncaughtException: /.test(info.message)) {
