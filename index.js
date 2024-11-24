@@ -38,25 +38,37 @@ const WinstonDynamoDB = function (options) {
 
 util.inherits(WinstonDynamoDB, winston.Transport);
 
+
+
 WinstonDynamoDB.prototype.log = function (info, callback) {
-    debug('log (called by winston)', info);
+    const  internalLog = (info, callback) => {
+        debug('log (called by winston)', info);
 
-    if (!isEmpty(info.message) || isError(info.message)) {
-        this.add(info);
+        if (!isEmpty(info.message) || isError(info.message)) {
+            this.add(info);
+        }
+
+        if (!/^uncaughtException: /.test(info.message)) {
+            // do not wait, just return right away
+            return callback(null, true);
+        }
+
+        debug('message not empty, proceeding')
+
+        // clear interval and send logs immediately
+        // as Winston is about to end the process
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+        this.submit(callback);
     }
 
-    if (!/^uncaughtException: /.test(info.message)) {
-        // do not wait, just return right away
-        return callback(null, true);
+    const { message } = info;
+
+    for (let i = 0; i < message.length; i+=10_000) {
+        internalLog({ ...info, message: message.slice(i, i+10_000) }, () => {});
     }
 
-    debug('message not empty, proceeding')
-
-    // clear interval and send logs immediately
-    // as Winston is about to end the process
-    clearInterval(this.intervalId);
-    this.intervalId = null;
-    this.submit(callback);
+    callback();
 };
 
 WinstonDynamoDB.prototype.createUploadInterval = function () {
