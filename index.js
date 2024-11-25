@@ -72,7 +72,7 @@ WinstonDynamoDB.prototype.add = function (log) {
     const { message: originalMessage } = log;
 
     if (originalMessage.length <= maxMessageLength) {
-        if (isEmpty(originalMessage) || isError(originalMessage)) {
+        if (!isEmpty(originalMessage) || isError(originalMessage)) {
             this.logEvents.push({
                 message: this.formatMessage(log),
                 timestamp: process.hrtime.bigint(),
