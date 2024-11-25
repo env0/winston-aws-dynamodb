@@ -70,26 +70,36 @@ WinstonDynamoDB.prototype.add = function (log) {
     debug('add log to queue', log);
 
     const { message: originalMessage } = log;
-    let currentMessageSlice = originalMessage.length <= maxMessageLength ? originalMessage : originalMessage.slice(0, maxMessageLength);
-    let currentIndex = 0;
 
-    while (!isEmpty(currentMessageSlice) || isError(currentMessageSlice)) {
-        this.logEvents.push({
-            message: this.formatMessage({...log, message: currentMessageSlice}),
-            timestamp: process.hrtime.bigint(),
-            rawMessage: log
-        });
+    if (originalMessage.length <= maxMessageLength) {
+        if (isEmpty(originalMessage) || isError(originalMessage)) {
+            this.logEvents.push({
+                message: this.formatMessage(log),
+                timestamp: process.hrtime.bigint(),
+                rawMessage: log
+            });
+        }
 
-        // When we reach maximum amount of items in batch, reschedule
         if (this.logEvents.length >= dynamodbIntegration.MAX_BATCH_ITEM_NUM) {
             debug('Max items for batch reached - submitting and rescheduling interval');
             clearInterval(this.intervalId);
             this.createUploadInterval();
             this.submit();
         }
+    } else {
+        for (let i = 0; i < originalMessage.length; i += maxMessageLength) {
+            let currentMessageSlice = originalMessage.slice(i, i + maxMessageLength);
+            this.logEvents.push({
+                message: this.formatMessage({...log, message: currentMessageSlice}),
+                timestamp: process.hrtime.bigint(),
+                rawMessage: log
+            });
 
-        currentIndex += maxMessageLength;
-        currentMessageSlice = originalMessage.slice(currentIndex, currentIndex + maxMessageLength);
+            debug(`Send each slice individually right away. current slice number:  ${(i / maxMessageLength) + 1}`);
+            clearInterval(this.intervalId);
+            this.createUploadInterval();
+            this.submit();
+        }
     }
 
     if (!this.intervalId) {
