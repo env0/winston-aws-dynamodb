@@ -111,7 +111,7 @@ WinstonDynamoDB.prototype.submit = function (callback) {
         this.logStreamName() : this.logStreamName;
 
     if (isEmpty(this.logEvents)) {
-        return callback();
+        return callback(null, true);
     }
 
     dynamodbIntegration.upload(
