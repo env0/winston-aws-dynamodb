@@ -8,7 +8,8 @@ const
     isError = require('lodash.iserror'),
     stringify = require('./lib/utils').stringify,
     debug = require('./lib/utils').debug,
-    defaultFlushTimeoutMs = 10000;
+    defaultFlushTimeoutMs = 10_000,
+    maxMessageLength = 300_000;
 
 const WinstonDynamoDB = function (options) {
     winston.Transport.call(this, options);
@@ -68,20 +69,27 @@ WinstonDynamoDB.prototype.createUploadInterval = function () {
 WinstonDynamoDB.prototype.add = function (log) {
     debug('add log to queue', log);
 
-    if (!isEmpty(log.message) || isError(log.message)) {
+    const { message: originalMessage } = log;
+    let currentMessageSlice = originalMessage.length <= maxMessageLength ? originalMessage : originalMessage.slice(0, maxMessageLength);
+    let currentIndex = 0;
+
+    while (!isEmpty(currentMessageSlice) || isError(currentMessageSlice)) {
         this.logEvents.push({
-            message: this.formatMessage(log),
+            message: this.formatMessage({...log, message: currentMessageSlice}),
             timestamp: process.hrtime.bigint(),
             rawMessage: log
         });
-    }
 
-    // When we reach maximum amount of items in batch, reschedule
-    if (this.logEvents.length >= dynamodbIntegration.MAX_BATCH_ITEM_NUM) {
-        debug('Max items for batch reached - submitting and rescheduling interval');
-        clearInterval(this.intervalId);
-        this.createUploadInterval();
-        this.submit();
+        // When we reach maximum amount of items in batch, reschedule
+        if (this.logEvents.length >= dynamodbIntegration.MAX_BATCH_ITEM_NUM) {
+            debug('Max items for batch reached - submitting and rescheduling interval');
+            clearInterval(this.intervalId);
+            this.createUploadInterval();
+            this.submit();
+        }
+
+        currentIndex += maxMessageLength;
+        currentMessageSlice = originalMessage.slice(currentIndex, currentIndex + maxMessageLength);
     }
 
     if (!this.intervalId) {
