@@ -8,7 +8,9 @@ const
     isError = require('lodash.iserror'),
     stringify = require('./lib/utils').stringify,
     debug = require('./lib/utils').debug,
-    defaultFlushTimeoutMs = 10000;
+    defaultFlushTimeoutMs = 10_000,
+    // we chose that as we wish to keep the message size under 400KB, to avoid truncation, and it should be enough as a safety net
+    maxMessageLength = 300_000;
 
 const WinstonDynamoDB = function (options) {
     winston.Transport.call(this, options);
@@ -68,20 +70,43 @@ WinstonDynamoDB.prototype.createUploadInterval = function () {
 WinstonDynamoDB.prototype.add = function (log) {
     debug('add log to queue', log);
 
-    if (!isEmpty(log.message) || isError(log.message)) {
+    const { message: originalMessage } = log;
+
+    if (isEmpty(originalMessage) || isError(originalMessage)) {
         this.logEvents.push({
             message: this.formatMessage(log),
             timestamp: process.hrtime.bigint(),
             rawMessage: log
         });
     }
+    else if (originalMessage.length <= maxMessageLength) {
+        this.logEvents.push({
+            message: this.formatMessage(log),
+            timestamp: process.hrtime.bigint(),
+            rawMessage: log
+        });
 
-    // When we reach maximum amount of items in batch, reschedule
-    if (this.logEvents.length >= dynamodbIntegration.MAX_BATCH_ITEM_NUM) {
-        debug('Max items for batch reached - submitting and rescheduling interval');
-        clearInterval(this.intervalId);
-        this.createUploadInterval();
-        this.submit();
+        if (this.logEvents.length >= dynamodbIntegration.MAX_BATCH_ITEM_NUM) {
+            debug('Max items for batch reached - submitting and rescheduling interval');
+            clearInterval(this.intervalId);
+            this.createUploadInterval();
+            this.submit();
+        }
+    }
+    else {
+        for (let i = 0; i < originalMessage.length; i += maxMessageLength) {
+            let currentMessageSlice = originalMessage.slice(i, i + maxMessageLength);
+            this.logEvents.push({
+                message: this.formatMessage({...log, message: currentMessageSlice}),
+                timestamp: process.hrtime.bigint(),
+                rawMessage: log
+            });
+
+            debug(`Send each slice individually right away. current slice number:  ${(i / maxMessageLength) + 1}`);
+            clearInterval(this.intervalId);
+            this.createUploadInterval();
+            this.submit();
+        }
     }
 
     if (!this.intervalId) {
