@@ -9,6 +9,7 @@ const
     stringify = require('./lib/utils').stringify,
     debug = require('./lib/utils').debug,
     defaultFlushTimeoutMs = 10_000,
+    // we chose that as we wish to keep the message size under 400KB, to avoid truncation, and it should be enough as a safety net
     maxMessageLength = 300_000;
 
 const WinstonDynamoDB = function (options) {
