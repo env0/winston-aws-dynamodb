@@ -72,14 +72,19 @@ WinstonDynamoDB.prototype.add = function (log) {
 
     const { message: originalMessage } = log;
 
-    if (originalMessage.length <= maxMessageLength) {
-        if (!isEmpty(originalMessage) || isError(originalMessage)) {
-            this.logEvents.push({
-                message: this.formatMessage(log),
-                timestamp: process.hrtime.bigint(),
-                rawMessage: log
-            });
-        }
+    if (isEmpty(originalMessage) || isError(originalMessage)) {
+        this.logEvents.push({
+            message: this.formatMessage(log),
+            timestamp: process.hrtime.bigint(),
+            rawMessage: log
+        });
+    }
+    else if (originalMessage.length <= maxMessageLength) {
+        this.logEvents.push({
+            message: this.formatMessage(log),
+            timestamp: process.hrtime.bigint(),
+            rawMessage: log
+        });
 
         if (this.logEvents.length >= dynamodbIntegration.MAX_BATCH_ITEM_NUM) {
             debug('Max items for batch reached - submitting and rescheduling interval');
@@ -87,7 +92,8 @@ WinstonDynamoDB.prototype.add = function (log) {
             this.createUploadInterval();
             this.submit();
         }
-    } else {
+    }
+    else {
         for (let i = 0; i < originalMessage.length; i += maxMessageLength) {
             let currentMessageSlice = originalMessage.slice(i, i + maxMessageLength);
             this.logEvents.push({
