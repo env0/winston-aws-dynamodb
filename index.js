@@ -1,19 +1,16 @@
 'use strict';
 
-const
-    util = require('util'),
-    winston = require('winston'),
-    dynamodbIntegration = require('./lib/dynamodb-integration'),
-    isEmpty = require('lodash.isempty'),
-    isError = require('lodash.iserror'),
-    stringify = require('./lib/utils').stringify,
-    debug = require('./lib/utils').debug,
-    PQueue = require('p-queue'),
-    defaultFlushTimeoutMs = 10_000,
-    // we chose that as we wish to keep the message size under 400KB, to avoid truncation, and it should be enough as a safety net
-    maxMessageLength = 300_000;
 
-const logsWritingQueue = new PQueue({concurrency: 200});
+import util from 'util';
+import winston from 'winston';
+import dynamodbIntegration from './lib/dynamodb-integration.js';
+import isEmpty from 'lodash.isempty';
+import isError from 'lodash.iserror';
+import { stringify, debug } from './lib/utils.js';
+
+const defaultFlushTimeoutMs = 10_000;
+// we chose that as we wish to keep the message size under 400KB, to avoid truncation, and it should be enough as a safety net
+const maxMessageLength = 300_000;
 
 const WinstonDynamoDB = function (options) {
     winston.Transport.call(this, options);
@@ -61,12 +58,12 @@ WinstonDynamoDB.prototype.log = function (info, callback) {
     // as Winston is about to end the process
     clearInterval(this.intervalId);
     this.intervalId = null;
-    logsWritingQueue.add(function() { this.submit(callback)});
+    this.submit(callback);
 };
 
 WinstonDynamoDB.prototype.createUploadInterval = function () {
     this.intervalId = setInterval(() => {
-        logsWritingQueue.add(function() {this.submit()});
+        this.submit();
     }, this.uploadRate);
 }
 
@@ -93,7 +90,7 @@ WinstonDynamoDB.prototype.add = function (log) {
             debug('Max items for batch reached - submitting and rescheduling interval');
             clearInterval(this.intervalId);
             this.createUploadInterval();
-            logsWritingQueue.add(function() {this.submit()});
+            this.submit();
         }
     }
     else {
@@ -108,7 +105,7 @@ WinstonDynamoDB.prototype.add = function (log) {
             debug(`Send each slice individually right away. current slice number:  ${(i / maxMessageLength) + 1}`);
             clearInterval(this.intervalId);
             this.createUploadInterval();
-            logsWritingQueue.add(function () {this.submit()});
+            this.submit();
         }
     }
 
@@ -149,16 +146,14 @@ WinstonDynamoDB.prototype.kthxbye = function (callback) {
     this.intervalId = null;
     this.flushTimeout = this.flushTimeout || (Date.now() + defaultFlushTimeoutMs);
 
-    logsWritingQueue.add(function() {
-        this.submit((function (error) {
-            if (error) return callback(error);
-            if (isEmpty(this.logEvents)) return callback();
-            if (Date.now() > this.flushTimeout) return callback(new Error('Timeout reached while waiting for logs to submit'));
-            else setTimeout(this.kthxbye.bind(this, callback), 0);
-        }).bind(this));
-    });
+    this.submit((function (error) {
+        if (error) return callback(error);
+        if (isEmpty(this.logEvents)) return callback();
+        if (Date.now() > this.flushTimeout) return callback(new Error('Timeout reached while waiting for logs to submit'));
+        else setTimeout(this.kthxbye.bind(this, callback), 0);
+    }).bind(this));
 };
 
 winston.transports.DynamoDB = WinstonDynamoDB;
 
-module.exports = WinstonDynamoDB;
+export default WinstonDynamoDB;
