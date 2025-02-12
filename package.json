@@ -3,6 +3,7 @@
   "version": "3.0.1",
   "description": "Winston Transport for DynamoDB",
   "main": "index.js",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/env0/winston-aws-dynamodb.git"
