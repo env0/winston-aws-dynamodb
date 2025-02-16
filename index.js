@@ -1,16 +1,16 @@
 'use strict';
 
-const
-    util = require('util'),
-    winston = require('winston'),
-    dynamodbIntegration = require('./lib/dynamodb-integration'),
-    isEmpty = require('lodash.isempty'),
-    isError = require('lodash.iserror'),
-    stringify = require('./lib/utils').stringify,
-    debug = require('./lib/utils').debug,
-    defaultFlushTimeoutMs = 10_000,
-    // we chose that as we wish to keep the message size under 400KB, to avoid truncation, and it should be enough as a safety net
-    maxMessageLength = 300_000;
+
+import util from 'util';
+import winston from 'winston';
+import dynamodbIntegration from './lib/dynamodb-integration.js';
+import isEmpty from 'lodash.isempty';
+import isError from 'lodash.iserror';
+import { stringify, debug } from './lib/utils.js';
+
+const defaultFlushTimeoutMs = 10_000;
+// we chose that as we wish to keep the message size under 400KB, to avoid truncation, and it should be enough as a safety net
+const maxMessageLength = 300_000;
 
 const WinstonDynamoDB = function (options) {
     winston.Transport.call(this, options);
@@ -156,4 +156,4 @@ WinstonDynamoDB.prototype.kthxbye = function (callback) {
 
 winston.transports.DynamoDB = WinstonDynamoDB;
 
-module.exports = WinstonDynamoDB;
+export default WinstonDynamoDB;
